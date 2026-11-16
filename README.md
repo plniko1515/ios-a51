@@ -81,3 +81,8 @@ python3 tools/a51-pack-boot.py pack stock-boot.img \
 bootshim FD na `0x90000000`). Skan LSE: kernel nie zawiera instrukcji armv8.1
 atomics w kodzie — bezpieczny dla A53/A73. Artefakty i stock BOOT trzymaj poza
 Git (prywatne dane).
+
+Topologia CPU w ADT (**device-verified**, stock DTB + `dmesg` z TWRP): boot
+CPU = Cortex-A53 MPIDR `0x0` (`cpu0`, `state=running`, mips=230/1,7 GHz),
+A53 `0x1..0x3`, Cortex-A73 `0x100..0x103` (mips=480/2,3 GHz). Odwrócenie
+MPIDR-ów daje panic `machine_routines.c:1244` (`ml_get_cpu_number` → -1).
