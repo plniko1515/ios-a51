@@ -12,7 +12,7 @@ index d3e760b..8f90948 100644
  bsd/dev/sweet_sta.c			standard
  bsd/dev/sweet_net.c			standard
 diff --git a/bsd/dev/herolte_drop.c b/bsd/dev/herolte_drop.c
-index d7f867a..12d24f0 100644
+index d7f867a..705b0c1 100644
 --- a/bsd/dev/herolte_drop.c
 +++ b/bsd/dev/herolte_drop.c
 @@ -13,7 +13,7 @@
@@ -24,7 +24,15 @@ index d7f867a..12d24f0 100644
  #include <sys/param.h>
  #include <sys/systm.h>
  #include <sys/errno.h>
-@@ -71,7 +71,11 @@ hdrop_fill(struct hdrop_reader *r, uint64_t off)
+@@ -34,6 +34,7 @@ extern vnode_t rootvnode;
+ extern kern_return_t kernel_thread_start(thread_continue_t, void *, thread_t *);
+ extern void thread_deallocate(thread_t);
+ int herolte_ufs_read_before_log(uint64_t back, uint32_t count, void *dst);
++int sweet_ufs_read_before_log(uint64_t back, uint32_t count, void *dst);
+ void herolte_drop_apply(void);
+ 
+ #define HDROP_BLOCK     4096u
+@@ -71,7 +72,11 @@ hdrop_fill(struct hdrop_reader *r, uint64_t off)
  		return EINVAL;
  	}
  	uint32_t n = (uint32_t)MIN((uint64_t)(HDROP_CHUNK / HDROP_BLOCK), HDROP_BLOCKS - 1 - block);
@@ -36,7 +44,7 @@ index d7f867a..12d24f0 100644
  	r->pos = block * HDROP_BLOCK;
  	r->have = error ? 0 : n * HDROP_BLOCK;
  	return error;
-@@ -244,7 +248,11 @@ hdrop_install(void)
+@@ -244,7 +249,11 @@ hdrop_install(void)
  		return;
  	}
  	struct hdrop_header h;
@@ -48,7 +56,7 @@ index d7f867a..12d24f0 100644
  		goto out;
  	}
  	memcpy(&h, r.buf, sizeof(h));
-@@ -325,4 +333,4 @@ hdrop_install(void)
+@@ -325,4 +334,4 @@ hdrop_install(void)
  out:
  	kfree_data(r.buf, HDROP_CHUNK);
  }
