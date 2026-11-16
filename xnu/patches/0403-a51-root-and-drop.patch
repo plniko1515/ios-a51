@@ -1,3 +1,16 @@
+diff --git a/bsd/conf/files b/bsd/conf/files
+index d3e760b..8f90948 100644
+--- a/bsd/conf/files
++++ b/bsd/conf/files
+@@ -110,7 +110,7 @@ bsd/dev/herolte_ufs.c			optional herolte_board
+ bsd/dev/herolte_touch.c			optional herolte_board
+ bsd/dev/herolte_battery.c		optional herolte_board
+ bsd/dev/herolte_gpu.c			optional herolte_board
+-bsd/dev/herolte_drop.c			optional herolte_board
++bsd/dev/herolte_drop.c			standard
+ bsd/dev/herolte_wifi.c			optional herolte_board
+ bsd/dev/sweet_sta.c			standard
+ bsd/dev/sweet_net.c			standard
 diff --git a/bsd/dev/herolte_drop.c b/bsd/dev/herolte_drop.c
 index d7f867a..12d24f0 100644
 --- a/bsd/dev/herolte_drop.c
