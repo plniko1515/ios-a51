@@ -85,10 +85,22 @@ index 6b926fe..0f8c11c 100644
 -#endif /* ARM64_BOARD_CONFIG_SWEET */
 +#endif /* ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_A5XELTE */
 diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
-index 8692b66..f8bc57b 100644
+index 8692b66..9130373 100644
 --- a/bsd/kern/bsd_init.c
 +++ b/bsd/kern/bsd_init.c
-@@ -1108,9 +1108,11 @@ bsdinit_task(void)
+@@ -1077,8 +1077,10 @@ bsd_init(void)
+ 	bsd_init_kprintf("done\n");
+ }
+ 
+-#if defined(ARM64_BOARD_CONFIG_HEROLTE)
++#if defined(ARM64_BOARD_CONFIG_HEROLTE) || defined(ARM64_BOARD_CONFIG_A5XELTE)
+ extern void herolte_drop_apply(void);
++#endif
++#if defined(ARM64_BOARD_CONFIG_HEROLTE)
+ extern void herolte_wifi_early(void);
+ #endif
+ 
+@@ -1108,9 +1110,11 @@ bsdinit_task(void)
  
  	bsd_init_kprintf("bsd_do_post - done");
  
