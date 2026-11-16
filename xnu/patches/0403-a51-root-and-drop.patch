@@ -63,7 +63,7 @@ index d7f867a..705b0c1 100644
 -#endif /* ARM64_BOARD_CONFIG_HEROLTE */
 +#endif /* ARM64_BOARD_CONFIG_HEROLTE || ARM64_BOARD_CONFIG_A5XELTE */
 diff --git a/bsd/dev/sweet_ufs.c b/bsd/dev/sweet_ufs.c
-index 6b926fe..0f8c11c 100644
+index 6b926fe..c800a72 100644
 --- a/bsd/dev/sweet_ufs.c
 +++ b/bsd/dev/sweet_ufs.c
 @@ -18,7 +18,7 @@
@@ -75,7 +75,23 @@ index 6b926fe..0f8c11c 100644
  #include <sys/param.h>
  #include <sys/systm.h>
  #include <sys/buf.h>
-@@ -805,6 +805,35 @@ sweet_log_start(void)
+@@ -655,11 +655,14 @@ sweet_ufs_init(void)
+ 	    want, su.lun, su.first_block, su.nblocks * UFS_BLOCK >> 20,
+ 	    su.writable ? "read-write" : "read-only", su.dma_pa);
+ 	sweet_log_start();
++#if defined(ARM64_BOARD_CONFIG_SWEET)
++	/* SWEET-only peripherals: A51 uses a5xelte_touch/keys and has no
++	 * SweetHID/SweetUSB. These are unrelated to the UFS root device. */
+ 	sweet_sample_start();
+-	/* Input drivers (HID services in iokit/Kernel/arm/hid/SweetHID.cpp). */
+ 	sweet_keys_init();
+ 	sweet_touch_init();
+ 	sweet_usb_probe();
++#endif
+ 	return 0;
+ }
+ 
+@@ -805,6 +808,35 @@ sweet_log_start(void)
  	}
  }
  
@@ -111,7 +127,7 @@ index 6b926fe..0f8c11c 100644
  /* Root device for rd=ufsroot0 (IOFindBSDRoot). */
  int sweet_ufs_rootdev(dev_t *dev);
  
-@@ -820,4 +849,4 @@ sweet_ufs_rootdev(dev_t *dev)
+@@ -820,4 +852,4 @@ sweet_ufs_rootdev(dev_t *dev)
  	*dev = su.bdev;
  	return 0;
  }
