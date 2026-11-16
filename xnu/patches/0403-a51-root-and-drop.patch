@@ -1,0 +1,121 @@
+diff --git a/bsd/dev/herolte_drop.c b/bsd/dev/herolte_drop.c
+index d7f867a..148f99b 100644
+--- a/bsd/dev/herolte_drop.c
++++ b/bsd/dev/herolte_drop.c
+@@ -13,7 +13,7 @@
+  * into it as root:wheel with its mode, unless that package (by id) is
+  * already installed. Boot-arg herodrop=0 skips it.
+  */
+-#if defined(ARM64_BOARD_CONFIG_HEROLTE)
++#if defined(ARM64_BOARD_CONFIG_HEROLTE) || defined(ARM64_BOARD_CONFIG_A5XELTE)
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/errno.h>
+@@ -244,7 +244,11 @@ hdrop_install(void)
+ 		return;
+ 	}
+ 	struct hdrop_header h;
++#if defined(ARM64_BOARD_CONFIG_HEROLTE)
+ 	if (herolte_ufs_read_before_log(HDROP_BLOCKS, 1, r.buf) != 0) {
++#else
++	if (sweet_ufs_read_before_log(HDROP_BLOCKS, 1, r.buf) != 0) {
++#endif
+ 		goto out;
+ 	}
+ 	memcpy(&h, r.buf, sizeof(h));
+@@ -325,4 +329,4 @@ hdrop_install(void)
+ out:
+ 	kfree_data(r.buf, HDROP_CHUNK);
+ }
+-#endif /* ARM64_BOARD_CONFIG_HEROLTE */
++#endif /* ARM64_BOARD_CONFIG_HEROLTE || ARM64_BOARD_CONFIG_A5XELTE */
+diff --git a/bsd/dev/sweet_ufs.c b/bsd/dev/sweet_ufs.c
+index 6b926fe..0f8c11c 100644
+--- a/bsd/dev/sweet_ufs.c
++++ b/bsd/dev/sweet_ufs.c
+@@ -18,7 +18,7 @@
+  * against the partition bounds again right before it is issued, so nothing
+  * outside the named partition can be written.
+  */
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_A5XELTE)
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/buf.h>
+@@ -805,6 +805,35 @@ sweet_log_start(void)
+ 	}
+ }
+ 
++/* A51 drop zone (a51-drop.py): read `back` 4 KiB blocks immediately
++ * before the persistent console log at the end of USERDATA. Mirrors
++ * herolte_ufs_read_before_log(); kept in sweet_ufs.c so the A51 kernel
++ * needs no herolte hardware driver. */
++int sweet_ufs_read_before_log(uint64_t back, uint32_t count, void *dst);
++
++int
++sweet_ufs_read_before_log(uint64_t back, uint32_t count, void *dst)
++{
++	if (!su.ready || back == 0 || count == 0 || count > back ||
++	    su.nblocks < SWEET_LOG_BLOCKS + back) {
++		return EINVAL;
++	}
++	uint64_t lba = su.first_block + su.nblocks - SWEET_LOG_BLOCKS - back;
++	int error = 0;
++	lck_mtx_lock(&sweet_ufs_lock);
++	for (uint32_t done = 0; done < count && !error;) {
++		uint32_t n = MIN(count - done, BOUNCE_SIZE / UFS_BLOCK);
++		error = ufs_read_blocks(lba + done, n);
++		if (!error) {
++			memcpy((uint8_t *)dst + (size_t)done * UFS_BLOCK,
++			    (const void *)(su.dma + DMA_BOUNCE), (size_t)n * UFS_BLOCK);
++		}
++		done += n;
++	}
++	lck_mtx_unlock(&sweet_ufs_lock);
++	return error;
++}
++
+ /* Root device for rd=ufsroot0 (IOFindBSDRoot). */
+ int sweet_ufs_rootdev(dev_t *dev);
+ 
+@@ -820,4 +849,4 @@ sweet_ufs_rootdev(dev_t *dev)
+ 	*dev = su.bdev;
+ 	return 0;
+ }
+-#endif /* ARM64_BOARD_CONFIG_SWEET */
++#endif /* ARM64_BOARD_CONFIG_SWEET || ARM64_BOARD_CONFIG_A5XELTE */
+diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
+index 8692b66..f8bc57b 100644
+--- a/bsd/kern/bsd_init.c
++++ b/bsd/kern/bsd_init.c
+@@ -1108,9 +1108,11 @@ bsdinit_task(void)
+ 
+ 	bsd_init_kprintf("bsd_do_post - done");
+ 
+-#if defined(ARM64_BOARD_CONFIG_HEROLTE)
++#if defined(ARM64_BOARD_CONFIG_HEROLTE) || defined(ARM64_BOARD_CONFIG_A5XELTE)
+ 	/* Files from the USERDATA drop zone, before launchd (bsd/dev/herolte_drop.c). */
+ 	herolte_drop_apply();
++#endif
++#if defined(ARM64_BOARD_CONFIG_HEROLTE)
+ 	/* en0 for the Wi-Fi before wifid and configd look for it (bsd/dev/herolte_wifi.c) */
+ 	herolte_wifi_early();
+ #endif
+diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
+index 10449ab..e20e8ae 100644
+--- a/iokit/bsddev/IOKitBSDInit.cpp
++++ b/iokit/bsddev/IOKitBSDInit.cpp
+@@ -828,9 +828,11 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+ 	}
+ #endif
+ 
+-#if defined(ARM64_BOARD_CONFIG_SWEET)
++#if defined(ARM64_BOARD_CONFIG_SWEET) || defined(ARM64_BOARD_CONFIG_A5XELTE)
+ //
+-//	SWEET: root on a GPT partition of the internal UFS (bsd/dev/sweet_ufs.c)
++//	SWEET / A5XELTE (A51): root on a GPT partition of the internal UFS
++//	(bsd/dev/sweet_ufs.c is standard, so it builds for A51 too; the
++//	"userdata" GPT partition is where iOS lives on the A51).
+ //
+ 	if (strcmp(rdBootVar, "ufsroot0") == 0) {
+ 		extern int sweet_ufs_rootdev(dev_t *dev);

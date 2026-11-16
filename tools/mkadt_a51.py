@@ -207,9 +207,11 @@ def build(canvas=(FB_WIDTH, FB_HEIGHT), dram=(DRAM_BASE, DRAM_SIZE), scale=3):
     ]))
     root.children = [n for n in root.children if n.prop('name') not in
                      (mkadt.cstr('sweet-fbcon'), mkadt.cstr('sweet-ufs'))]
-    # Exynos 9611 UFSHCI. Absolute address; the A51 UFS driver (a51_ufs,
-    # patch 0402+) reads it and exposes the GPT "userdata" partition as root.
-    root.children.append(mkadt.node('a51-ufs', [
+    # Exynos 9611 UFSHCI. Absolute address. The node MUST be named
+    # 'sweet-ufs': bsd/dev/sweet_ufs.c (standard, now enabled for A5XELTE)
+    # looks up /sweet-ufs and exposes the GPT "userdata" partition as
+    # ufsroot0 (rd=ufsroot0). 0x13520000 from the stock A51 DTB.
+    root.children.append(mkadt.node('sweet-ufs', [
         ('reg', mkadt.u64(UFS_BASE, 0x3000)),
     ]))
     # pe_serial.c looks this node up by name for the kprintf console
