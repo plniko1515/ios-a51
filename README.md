@@ -16,7 +16,10 @@ Hackintosha.** KDK 13.5 pobierane z publicznego CDN
 |---|---|
 | UEFI boot chain (edk2, S-Boot → UEFI → XnuLoaderA51) | gotowe (repo `edk2-a51`, `boot-a51-ios-v1.img`) |
 | Konfiguracja maszyny A51 w XNU (`MACHINE_CONFIG=A51`) | patch `xnu/patches/0400-a51-machine-config.patch` |
-| Pierwszy build kernela w CI | **w toku** |
+| Pierwszy build kernela w CI | ✅ `kernel.development.a51` (run `43938215733`, 17,2 MB) |
+| Payload XNU (kernel + ADT) | ✅ `tools/mkpayload.py` + `tools/mkadt_a51.py` (16,5 MB, `phys_base=0x82000000` / 224 MiB) |
+| Shim A51 (S-Boot → XNU) | ✅ `shim/a51` (probe + loader) oraz UEFI `XnuLoaderA51` |
+| Boot.img do testu | ✅ `tools/a51-pack-boot.py pack ... --append a51.payload` (18,2 MB, mieści się w BOOT ~59 MiB) |
 | Sterowniki podstawy (dotyk, power/volume, WiFi, dźwięk) | planowane (wzorce Sweet* + facty ze stock DTB) |
 | iOS rootfs (partycja `userdata`) | planowane (repo `ios-root-build`) |
 
@@ -58,4 +61,23 @@ minut quota). Na **publicznym** repo minuty macOS są **darmowe**.
 
 iOS startuje z partycji **userdata** (label GPT `userdata` w stock GPT A51).
 Boot chain: S-Boot (BOOT partitions) → UEFI (`boot-a51-ios-v1.img` z osadzonym
-XnuLoaderA51) → XNU z ADT wygenerowanym ze stock DTB (`tools/mkadt_a51.py`, TODO).
+XnuLoaderA51) albo bezpośrednio shim `shim/a51` w slocie kernela BOOT → payload
+`SWEETXNU`.
+
+### Budowa boot.img do testu (host, bez zapisu na urządzenie)
+
+```sh
+# 1. kernel z artefaktu CI: xnu-kernel-macos-15-intel/kernel.development.a51
+# 2. ADT (stock DTB UFS/GIC + verified-live FB 0xCA000000):
+python3 tools/mkadt_a51.py a51.adt
+# 3. payload SWEETXNU (kernel + ADT, chained fixups zrebazowane):
+python3 tools/mkpayload.py kernel.development.a51 a51.adt a51.payload
+# 4. wstaw loader do slotu kernela stock BOOT, payload na _image_end:
+python3 tools/a51-pack-boot.py pack stock-boot.img \
+    shim/a51/out/xnu_boot.Image a51-xnu-boot.img --append a51.payload
+```
+
+`a51.payload` ma `phys_base=0x82000000`, `mem_size=224 MiB` (okno XNU przed
+bootshim FD na `0x90000000`). Skan LSE: kernel nie zawiera instrukcji armv8.1
+atomics w kodzie — bezpieczny dla A53/A73. Artefakty i stock BOOT trzymaj poza
+Git (prywatne dane).
