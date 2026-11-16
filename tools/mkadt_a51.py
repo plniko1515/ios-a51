@@ -139,12 +139,14 @@ def build(canvas=(FB_WIDTH, FB_HEIGHT), dram=(DRAM_BASE, DRAM_SIZE), scale=3):
     add_bluetooth_isp(root)
     cpus = child(root, 'cpus')
     cpu0 = child(cpus, 'cpu0')
-    # Exynos 9611 (mainline dtsi): Cortex-A73 "big" cluster MPIDR 0x0..0x3,
-    # Cortex-A53 "LITTLE" cluster MPIDR 0x100..0x103. Like the herolte S7
-    # (Apollo/Mongoose) the LITTLE cluster is logical 0..3; S-Boot is assumed
-    # to hand off on the Cortex-A53 at MPIDR 0x100 (TO-VERIFY on first boot).
+    # Stock A51 DTB (DEVICE-VERIFIED): /cpus/cpu@100..103 are Cortex-A53 with
+    # reg <0x0 0x0..0x3>, /cpus/cpu@0..3 are Cortex-A73 with reg <0x0 0x100..0x103>.
+    # The stock kernel logs "Booting Linux on physical CPU 0x0" with
+    # cpu0 mips=230 (A53 1.7 GHz) and cpu4 mips=480 (A73 2.3 GHz): S-Boot hands
+    # off on an A53 at MPIDR 0x0. Getting this backwards makes XNU's
+    # ml_get_cpu_number(MPIDR) return -1 -> assertion at machine_routines.c:1244.
     set_prop(cpu0, 'compatible', mkadt.cstr('arm,cortex-a53') + mkadt.cstr('ARM,v8'))
-    set_prop(cpu0, 'reg', mkadt.u32(0x100))
+    set_prop(cpu0, 'reg', mkadt.u32(0x0))
     set_prop(cpu0, 'timebase-frequency', mkadt.u32(26000000))
     for logical in range(1, 8):
         big = logical >= 4
@@ -155,7 +157,9 @@ def build(canvas=(FB_WIDTH, FB_HEIGHT), dram=(DRAM_BASE, DRAM_SIZE), scale=3):
             # the A73s keep their own compatible (no driver matches them).
             ('compatible', (mkadt.cstr('arm,cortex-a73') if big else b'') +
                            mkadt.cstr('arm,cortex-a53') + mkadt.cstr('ARM,v8')),
-            ('reg', mkadt.u32(core if big else 0x100 | core)),
+            # device-verified MPIDRs: A53 cluster at Aff1=0 (0x0..0x3),
+            # A73 cluster at Aff1=1 (0x100..0x103). cpu0 is 'running' above.
+            ('reg', mkadt.u32(0x100 | core if big else core)),
             ('cpu-id', mkadt.u32(logical)),
             ('cluster-id', mkadt.u32(0)),
             ('cluster-type', mkadt.u32(0)),
