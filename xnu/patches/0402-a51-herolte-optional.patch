@@ -1,0 +1,55 @@
+diff --git a/bsd/conf/files b/bsd/conf/files
+index b7047c1..d3e760b 100644
+--- a/bsd/conf/files
++++ b/bsd/conf/files
+@@ -106,16 +106,16 @@ bsd/dev/random/randomdev.c		standard
+ bsd/dev/memdev.c			standard
+ bsd/dev/sweet_ufs.c			standard
+ bsd/dev/a5xelte_emmc.c			standard
+-bsd/dev/herolte_ufs.c			standard
+-bsd/dev/herolte_touch.c			standard
+-bsd/dev/herolte_battery.c		standard
+-bsd/dev/herolte_gpu.c			standard
+-bsd/dev/herolte_drop.c			standard
+-bsd/dev/herolte_wifi.c			standard
++bsd/dev/herolte_ufs.c			optional herolte_board
++bsd/dev/herolte_touch.c			optional herolte_board
++bsd/dev/herolte_battery.c		optional herolte_board
++bsd/dev/herolte_gpu.c			optional herolte_board
++bsd/dev/herolte_drop.c			optional herolte_board
++bsd/dev/herolte_wifi.c			optional herolte_board
+ bsd/dev/sweet_sta.c			standard
+ bsd/dev/sweet_net.c			standard
+ bsd/dev/sweet_apple80211.c		standard
+-bsd/dev/herolte_gl.c			standard
++bsd/dev/herolte_gl.c			optional herolte_board
+ bsd/dev/a5xelte_keys.c			standard
+ bsd/dev/a5xelte_touch.c			standard
+ bsd/dev/sweet_sample.c			standard
+diff --git a/config/MASTER.arm64.herolte b/config/MASTER.arm64.herolte
+index e5a1a8f..67b3083 100644
+--- a/config/MASTER.arm64.herolte
++++ b/config/MASTER.arm64.herolte
+@@ -98,6 +98,8 @@ machine		"arm64"						# <arm64>
+ makeoptions	OSFMK_MACHINE = "arm64"				# <mach>
+ 
+ options		COUNT_SYSCALLS		# count bsd system calls 	# <countcalls>
++
++options		herolte_board		# HEROLTE-only bsd drivers: bsd/dev/herolte_*.c is optional herolte_board
+ options     TRASH_VFP_ON_SAVE   # <debug,trash_vfp>
+ options		ALTERNATE_DEBUGGER	# <alternate_debugger>
+ 
+diff --git a/iokit/Kernel/arm/SweetFramebuffer.cpp b/iokit/Kernel/arm/SweetFramebuffer.cpp
+index eaf6360..a4e9a2b 100644
+--- a/iokit/Kernel/arm/SweetFramebuffer.cpp
++++ b/iokit/Kernel/arm/SweetFramebuffer.cpp
+@@ -365,7 +365,9 @@ AppleARMBacklight::setProperties(OSObject *properties)
+ 			}
+ 			r = lo;
+ 		}
++#if defined(ARM64_BOARD_CONFIG_HEROLTE)
+ 		notefe_brightness_set((uint32_t)(r >= 65536 ? 255 : r * 255 / 65536), "backlight");
++#endif /* ARM64_BOARD_CONFIG_HEROLTE */
+ 	}
+ 	return kIOReturnSuccess;
+ }
