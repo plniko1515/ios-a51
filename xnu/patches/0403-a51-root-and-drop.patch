@@ -1,5 +1,5 @@
 diff --git a/bsd/dev/herolte_drop.c b/bsd/dev/herolte_drop.c
-index d7f867a..148f99b 100644
+index d7f867a..12d24f0 100644
 --- a/bsd/dev/herolte_drop.c
 +++ b/bsd/dev/herolte_drop.c
 @@ -13,7 +13,7 @@
@@ -11,7 +11,19 @@ index d7f867a..148f99b 100644
  #include <sys/param.h>
  #include <sys/systm.h>
  #include <sys/errno.h>
-@@ -244,7 +244,11 @@ hdrop_install(void)
+@@ -71,7 +71,11 @@ hdrop_fill(struct hdrop_reader *r, uint64_t off)
+ 		return EINVAL;
+ 	}
+ 	uint32_t n = (uint32_t)MIN((uint64_t)(HDROP_CHUNK / HDROP_BLOCK), HDROP_BLOCKS - 1 - block);
++#if defined(ARM64_BOARD_CONFIG_HEROLTE)
+ 	int error = herolte_ufs_read_before_log(HDROP_BLOCKS - 1 - block, n, r->buf);
++#else
++	int error = sweet_ufs_read_before_log(HDROP_BLOCKS - 1 - block, n, r->buf);
++#endif
+ 	r->pos = block * HDROP_BLOCK;
+ 	r->have = error ? 0 : n * HDROP_BLOCK;
+ 	return error;
+@@ -244,7 +248,11 @@ hdrop_install(void)
  		return;
  	}
  	struct hdrop_header h;
@@ -23,7 +35,7 @@ index d7f867a..148f99b 100644
  		goto out;
  	}
  	memcpy(&h, r.buf, sizeof(h));
-@@ -325,4 +329,4 @@ hdrop_install(void)
+@@ -325,4 +333,4 @@ hdrop_install(void)
  out:
  	kfree_data(r.buf, HDROP_CHUNK);
  }
