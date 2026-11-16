@@ -1,0 +1,132 @@
+diff --git a/bsd/conf/Makefile.template b/bsd/conf/Makefile.template
+index 7dee125..f7d46b5 100644
+--- a/bsd/conf/Makefile.template
++++ b/bsd/conf/Makefile.template
+@@ -45,7 +45,7 @@ CFLAGS+= -include meta_features.h -DDRIVER_PRIVATE \
+ SFLAGS+= -include meta_features.h
+ 
+ # This provider is built into SWEET; other boards use their normal kext.
+-ifneq ($(filter $(CURRENT_MACHINE_CONFIG),SWEET A5XELTE HEROLTE),)
++ifneq ($(filter $(CURRENT_MACHINE_CONFIG),SWEET A5XELTE HEROLTE A51),)
+ SWEET_PTHREAD_ROOT = $(SRCROOT)/bsd/pthread/sweet_libpthread
+ SWEET_PTHREAD_INC = -I$(SWEET_PTHREAD_ROOT) -I$(SWEET_PTHREAD_ROOT)/private -I$(SWEET_PTHREAD_ROOT)/include
+ sweet_pthread_init.o_INCFLAGS = $(SWEET_PTHREAD_INC)
+diff --git a/libkern/conf/Makefile.template b/libkern/conf/Makefile.template
+index f91d537..3ab5dd8 100644
+--- a/libkern/conf/Makefile.template
++++ b/libkern/conf/Makefile.template
+@@ -19,7 +19,7 @@ include $(MakeInc_def)
+ CFLAGS+= -include meta_features.h -DLIBKERN_KERNEL_PRIVATE -DOSALLOCDEBUG=1
+ SFLAGS+= -include meta_features.h
+ 
+-ifneq ($(filter $(CURRENT_MACHINE_CONFIG),SWEET A5XELTE HEROLTE),)
++ifneq ($(filter $(CURRENT_MACHINE_CONFIG),SWEET A5XELTE HEROLTE A51),)
+ SWEET_AES_ROOT = $(SRCROOT)/libkern/crypto/sweet_bearssl
+ SWEET_AES_INC = -I$(SWEET_AES_ROOT)/inc -I$(SWEET_AES_ROOT)/src
+ sweet_aes.o_INCFLAGS = $(SWEET_AES_INC)
+diff --git a/makedefs/MakeInc.def b/makedefs/MakeInc.def
+index 6d0b107..0256b28 100644
+--- a/makedefs/MakeInc.def
++++ b/makedefs/MakeInc.def
+@@ -29,7 +29,7 @@ SUPPORTED_ARM64_MACHINE_CONFIGS = NONE
+ else ifneq ($(findstring _host,$(RC_ProjectName)),)
+ SUPPORTED_ARM64_MACHINE_CONFIGS = NONE
+ else
+-SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE SWEET A5XELTE HEROLTE
++SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE SWEET A5XELTE HEROLTE A51
+ 
+ endif
+ 
+@@ -65,6 +65,8 @@ MACHINE_FLAGS_ARM64_SWEET = -DARM64_BOARD_CONFIG_SWEET                -march=arm
+ MACHINE_FLAGS_ARM64_A5XELTE = -DARM64_BOARD_CONFIG_A5XELTE            -mcpu=cortex-a53 -march=armv8-a+crypto
+ # Galaxy S7 (Exynos 8890) boots on a Cortex-A53 and reuses the A5XELTE port.
+ MACHINE_FLAGS_ARM64_HEROLTE = -DARM64_BOARD_CONFIG_A5XELTE -DARM64_BOARD_CONFIG_HEROLTE -mcpu=cortex-a53 -march=armv8-a+crypto
++# Galaxy A51 (Exynos 9611): A5XELTE-family board, Cortex-A53 baseline codegen.
++MACHINE_FLAGS_ARM64_A51 = -DARM64_BOARD_CONFIG_A5XELTE -DARM64_BOARD_CONFIG_A51 -mcpu=cortex-a53 -march=armv8-a+crypto
+ 
+ 
+ #
+@@ -264,7 +266,7 @@ ifeq ($(ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG),)
+ export ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG := $(shell echo $(CURRENT_ARCH_CONFIG) | tr A-Z a-z)
+ ifneq ($(filter arm64,$(ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG)),)
+ # These generic ARMv8 targets do not use Apple's arm64e pointer authentication.
+-ifeq ($(filter $(CURRENT_MACHINE_CONFIG),SWEET A5XELTE HEROLTE),)
++ifeq ($(filter $(CURRENT_MACHINE_CONFIG),SWEET A5XELTE HEROLTE A51),)
+ export ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG := arm64e
+ endif
+ endif
+@@ -343,7 +345,7 @@ endif
+ # Exynos7580 uses 4 KiB pages: TTBR1 has a 39-bit range. The macOS
+ # ARM_LARGE_MEMORY link address at -2 TiB is outside that range. Keep this
+ # board inside the existing compact kernel VA layout instead.
+-ifneq ($(filter $(CURRENT_MACHINE_CONFIG),A5XELTE HEROLTE),)
++ifneq ($(filter $(CURRENT_MACHINE_CONFIG),A5XELTE HEROLTE A51),)
+ LARGE_MEMORY_DEFINE=-UARM_LARGE_MEMORY
+ ARM64_PLKSEG_ADDR  =0xfffffff004004000
+ ARM64_LINK_ADDR    =0xfffffff007004000
+diff --git a/pexpert/pexpert/arm64/A5XELTE.h b/pexpert/pexpert/arm64/A5XELTE.h
+index 8f9c8a2..c6ac32e 100644
+--- a/pexpert/pexpert/arm64/A5XELTE.h
++++ b/pexpert/pexpert/arm64/A5XELTE.h
+@@ -10,7 +10,21 @@
+ #define SWEET                         1
+ 
+ /* Firmware scanout buffer and the earliest XNU marker (physical). */
+-#if defined(ARM64_BOARD_CONFIG_HEROLTE)
++#if defined(ARM64_BOARD_CONFIG_A51)
++/* Galaxy A51 SM-A515F: 6.5" 1080x2400 AMOLED. Placeholder values until the
++ * board-target patch wires the stock DTB facts; boot is serial-first. */
++#define SWEET_SMP_MAX_CPUS            1
++#define A5XELTE_FB_PA                 0x67000000
++#define A5XELTE_FB_WIDTH              1080
++#define A5XELTE_FB_HEIGHT             2400
++#define A5XELTE_FB_STRIDE             4320
++#define A5XELTE_FB_BLOCKS             6     /* 2 MiB VA=PA bootstrap blocks */
++#define A5XELTE_FB_TEXT_SCALE         2
++#define A5XELTE_FB_DOT_PITCH          424
++#define A5XELTE_MARKER_PA             0x469ff100
++/* TODO(0402): confirm which core Exynos 9611's S-Boot hands off on. */
++#define A5XELTE_BOOT_MPIDR            0x0
++#elif defined(ARM64_BOARD_CONFIG_HEROLTE)
+ /* Galaxy S7 SM-G930F: S-Boot leaves DECON_F scanning out this buffer. */
+ #define HEROLTE                       1
+ /* Logical 0..3: Cortex-A53 "Apollo" MPIDR 0x100..0x103 (boot cluster);
+diff --git a/pexpert/pexpert/arm64/Makefile b/pexpert/pexpert/arm64/Makefile
+index 5f033b1..87a0b86 100644
+--- a/pexpert/pexpert/arm64/Makefile
++++ b/pexpert/pexpert/arm64/Makefile
+@@ -19,7 +19,8 @@ PRIVATE_KERNELFILES = \
+ 	VMAPPLE.h \
+ 	BCM2837.h \
+ 	SWEET.h \
+-	A5XELTE.h
++	A5XELTE.h \
++	A51.h
+ 
+ 
+ # Headers installed into System.framework/PrivateHeaders (userspace internal SDK only).
+diff --git a/pexpert/pexpert/arm64/board_config.h b/pexpert/pexpert/arm64/board_config.h
+index 5f8925a..2edb0e0 100644
+--- a/pexpert/pexpert/arm64/board_config.h
++++ b/pexpert/pexpert/arm64/board_config.h
+@@ -113,11 +113,20 @@
+ 
+ #define MAX_L2_CLINE                   6
+ #define MAX_CPUS                       8
++#if defined(ARM64_BOARD_CONFIG_A51)
++/* A51 is big.LITTLE: Cortex-A53 cluster plus a Cortex-A73 cluster. */
++#define MAX_CPU_CLUSTERS               2
++#else
+ #define MAX_CPU_CLUSTERS               1
++#endif
+ 
+ #define CORE_NCTRS                     8
+ #endif  /* ARM64_BOARD_CONFIG_A5XELTE */
+ 
++#ifdef ARM64_BOARD_CONFIG_A51
++#include <pexpert/arm64/A51.h>
++#endif  /* ARM64_BOARD_CONFIG_A51 */
++
+ #ifdef ARM64_BOARD_CONFIG_VMAPPLE
+ #include <pexpert/arm64/VMAPPLE.h>
+ 
