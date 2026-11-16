@@ -1,0 +1,17 @@
+diff --git a/iokit/Kernel/arm/SweetFramebuffer.cpp b/iokit/Kernel/arm/SweetFramebuffer.cpp
+index 2640ac4..eaf6360 100644
+--- a/iokit/Kernel/arm/SweetFramebuffer.cpp
++++ b/iokit/Kernel/arm/SweetFramebuffer.cpp
+@@ -681,7 +681,12 @@ AppleCLCD::showFired(OSObject *owner, IOTimerEventSource *sender)
+ 		uint64_t before = mach_absolute_time();
+ 		uint64_t bytes = fb->present(rec);
+ 		if (trace) {
++#if defined(ARM64_BOARD_CONFIG_HEROLTE)
+ 			IOLog("NOTEFE ZC: show %llu: presented (zero copy %d)\n", zc_traced, notefe_zc_active());
++#else
++			/* Not a herolte board: no Mali zero-copy service exists here. */
++			IOLog("NOTEFE ZC: show %llu: presented\n", zc_traced);
++#endif
+ 		}
+ 		uint64_t ns = 0;
+ 		absolutetime_to_nanoseconds(mach_absolute_time() - before, &ns);

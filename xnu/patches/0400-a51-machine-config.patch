@@ -210,28 +210,31 @@ index 0000000..a80a484
 +
 +#endif /* _PEXPERT_ARM64_A51_H */
 diff --git a/pexpert/pexpert/arm64/A5XELTE.h b/pexpert/pexpert/arm64/A5XELTE.h
-index 8f9c8a2..c6ac32e 100644
+index 8f9c8a2..7215b11 100644
 --- a/pexpert/pexpert/arm64/A5XELTE.h
 +++ b/pexpert/pexpert/arm64/A5XELTE.h
-@@ -10,7 +10,21 @@
+@@ -10,7 +10,24 @@
  #define SWEET                         1
  
  /* Firmware scanout buffer and the earliest XNU marker (physical). */
 -#if defined(ARM64_BOARD_CONFIG_HEROLTE)
 +#if defined(ARM64_BOARD_CONFIG_A51)
-+/* Galaxy A51 SM-A515F: 6.5" 1080x2400 AMOLED. Placeholder values until the
-+ * board-target patch wires the stock DTB facts; boot is serial-first. */
++/* Galaxy A51 SM-A515F: 6.5" 1080x2400 AMOLED. Verified-live facts from the
++ * UEFI chain bring-up: S-Boot lights the panel and scans out from 0xCA000000
++ * (BGRA8888, stride 4320); the DECON SW trigger refreshes it. */
 +#define SWEET_SMP_MAX_CPUS            1
-+#define A5XELTE_FB_PA                 0x67000000
++#define A5XELTE_FB_PA                 0xca000000
 +#define A5XELTE_FB_WIDTH              1080
 +#define A5XELTE_FB_HEIGHT             2400
 +#define A5XELTE_FB_STRIDE             4320
-+#define A5XELTE_FB_BLOCKS             6     /* 2 MiB VA=PA bootstrap blocks */
++#define A5XELTE_FB_BLOCKS             5     /* 2 MiB VA=PA bootstrap blocks */
 +#define A5XELTE_FB_TEXT_SCALE         2
-+#define A5XELTE_FB_DOT_PITCH          424
-+#define A5XELTE_MARKER_PA             0x469ff100
-+/* TODO(0402): confirm which core Exynos 9611's S-Boot hands off on. */
-+#define A5XELTE_BOOT_MPIDR            0x0
++#define A5XELTE_FB_DOT_PITCH          458   /* iPhone X userland density */
++#define A5XELTE_MARKER_PA             0x8ffff100
++/* The mainline dtsi puts the Cortex-A53 (LITTLE) cluster at MPIDR 0x100..0x103
++ * and Cortex-A73 at 0x0..0x3; like the S7, boot is assumed on the A53 core 0
++ * of the little cluster (TO-VERIFY on first boot). */
++#define A5XELTE_BOOT_MPIDR            0x100
 +#elif defined(ARM64_BOARD_CONFIG_HEROLTE)
  /* Galaxy S7 SM-G930F: S-Boot leaves DECON_F scanning out this buffer. */
  #define HEROLTE                       1
