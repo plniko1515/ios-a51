@@ -13,7 +13,7 @@ index 17955fb..dcdbcf6 100644
 +#include <kern/misc_protos.h>
 +
 +/* The bootstrap TTBR0 maps DECON scanout VA=PA until arm_vm_init. */
-+#define A5_FB ((volatile uint32_t *)(uintptr_t)0x67000000)
++#define A5_FB ((volatile uint32_t *)(uintptr_t)0xCA000000)
 +#define A5_STRIDE 1080u
 +#define A5_SCALE 2u
 +#define A5_ROW_HEIGHT (16u * A5_SCALE)

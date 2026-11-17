@@ -1,0 +1,11 @@
+diff --git a/osfmk/arm64/sweet_early.c b/osfmk/arm64/sweet_early.c
+--- a/osfmk/arm64/sweet_early.c
++++ b/osfmk/arm64/sweet_early.c
+@@ -10,6 +10,6 @@
+ #include <arm64/sweet_early.h>
+ 
+-#if defined(SWEET) && defined(A5XELTE)
++#if defined(A5XELTE)
+ void sweet_early_putc(char c) { (void)c; }
+ void sweet_early_mark(unsigned int stage, const char *label) { (void)stage; (void)label; }
+ void sweet_early_panic(const char *fmt, va_list *args) { (void)fmt; (void)args; }
