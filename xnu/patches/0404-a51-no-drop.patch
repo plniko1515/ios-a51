@@ -13,7 +13,7 @@ diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
  extern void herolte_wifi_early(void);
  #endif
  
-@@ -1110,11 +1108,7 @@
+@@ -1110,11 +1108,9 @@
  
  	bsd_init_kprintf("bsd_do_post - done");
  
