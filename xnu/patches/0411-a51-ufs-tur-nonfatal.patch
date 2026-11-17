@@ -1,0 +1,21 @@
+diff --git a/bsd/dev/sweet_ufs.c b/bsd/dev/sweet_ufs.c
+index c800a72..1514d45 100644
+--- a/bsd/dev/sweet_ufs.c
++++ b/bsd/dev/sweet_ufs.c
+@@ -625,9 +625,14 @@ sweet_ufs_init(void)
+ 	error = ufs_take_over_host();
+ 	if (!error) {
+ 		static const uint8_t tur[6] = { 0x00 };
+-		/* The first command after the bootloader may report a unit attention. */
+-		for (int i = 0; i < 3 && (error = ufs_scsi(tur, sizeof(tur), 0, false)); i++) {
++		/* The first command after the bootloader usually reports unit
++		 * attention (CHECK CONDITION) on Exynos9611. It is harmless: clear
++		 * the latched status and proceed to READ(10). Do not fail init if
++		 * TUR reports a device error. */
++		for (int i = 0; i < 3; i++) {
++			(void)ufs_scsi(tur, sizeof(tur), 0, false);
+ 		}
++		error = 0;
+ 	}
+ 	if (!error) {
+ 		error = ufs_find_partition(want);
