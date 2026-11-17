@@ -23,6 +23,7 @@ chunks so an interrupted run resumes. Refuses to run while /data is mounted.
 import argparse
 import gzip
 import hashlib
+from pathlib import Path
 import os
 import subprocess
 import sys

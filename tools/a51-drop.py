@@ -116,7 +116,7 @@ def app_items(src):
     print(f'app {name}: {len(files)} files, {machos} Mach-O, {size >> 10} KiB')
     return [(f'apps/{name}/{rel}', data, 0o755 if macho_slices(data) else 0o644) for rel, data in files]
 
-DEV = '/dev/block/platform/155a0000.ufs/by-name/USERDATA'
+DEV = '/dev/block/by-name/userdata'
 BLOCK = 4096
 LOG_BLOCKS = 1 + (4 << 20) // BLOCK
 DROP_BLOCKS = 32768
