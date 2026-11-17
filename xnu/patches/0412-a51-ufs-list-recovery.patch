@@ -1,0 +1,66 @@
+diff --git a/bsd/dev/sweet_ufs.c b/bsd/dev/sweet_ufs.c
+index c800a72..69d3a52 100644
+--- a/bsd/dev/sweet_ufs.c
++++ b/bsd/dev/sweet_ufs.c
+@@ -64,6 +64,8 @@ extern void sweet_usb_probe(void);
+ #define REG_UTRLDBR     0x58
+ #define REG_UTRLCLR     0x5c
+ #define REG_UTRLRSR     0x60
++#define REG_UTMRLRSR    0x70
++#define IS_SBFES        (1u << 17)
+ 
+ #define HCS_DP          (1u << 0)
+ #define HCS_UTRLRDY     (1u << 1)
+@@ -141,6 +143,21 @@ dma_clean(uint32_t off, uint32_t len)
+ 	clean_dcache64((addr64_t)(su.dma_pa + off), len, TRUE);
+ }
+ 
++/* Exynos9611: revive a halted UTP transfer list (clear SBFES + re-arm). */
++static void
++ufs_revive_list(void)
++{
++	uint32_t hcs = ufs_rd(REG_HCS);
++	if (hcs & HCS_UTRLRDY) {
++		return;
++	}
++	ufs_wr(REG_IS, ufs_rd(REG_IS) | IS_SBFES);
++	ufs_wr(REG_UTMRLRSR, 1);
++	ufs_wr(REG_UTRLRSR, 1);
++	__builtin_arm_dsb(0xf);
++	delay(4);
++}
++
+ /*
+  * One SCSI command in slot 0, data (if any) to/from the bounce buffer
+  * (to the device when write is set). Returns 0 or an errno.
+@@ -153,6 +170,7 @@ ufs_scsi(const uint8_t *cdb, unsigned cdb_len, uint32_t len, bool write)
+ 	uint64_t ucd_pa = su.dma_pa + DMA_UCD, bounce_pa = su.dma_pa + DMA_BOUNCE;
+ 
+ 	assert(len <= BOUNCE_SIZE);
++	ufs_revive_list();
+ 	bzero(utrd, sizeof(*utrd));
+ 	bzero(ucd, sizeof(*ucd));
+ 
+@@ -251,6 +269,7 @@ ufs_scsi(const uint8_t *cdb, unsigned cdb_len, uint32_t len, bool write)
+ 	if (ocs || ucd->resp[0] != 0x21 || ucd->resp[6] || ucd->resp[7]) {
+ 		printf("SWEET UFS: command 0x%02x failed: ocs 0x%x upiu 0x%x response 0x%x status 0x%x\n",
+ 		    cdb[0], ocs, ucd->resp[0], ucd->resp[6], ucd->resp[7]);
++		ufs_revive_list();
+ 		return EIO;
+ 	}
+ 	return 0;
+@@ -268,7 +287,13 @@ ufs_read_blocks(uint64_t lba, uint32_t count)
+ 		(uint8_t)(lba >> 24), (uint8_t)(lba >> 16), (uint8_t)(lba >> 8), (uint8_t)lba,
+ 		0, (uint8_t)(count >> 8), (uint8_t)count, 0
+ 	};
+-	return ufs_scsi(cdb, sizeof(cdb), count * UFS_BLOCK, false);
++	for (int attempt = 0; attempt < 4; attempt++) {
++		int error = ufs_scsi(cdb, sizeof(cdb), count * UFS_BLOCK, false);
++		if (!error) {
++			return 0;
++		}
++	}
++	return EIO;
+ }
+ 
+ /*
