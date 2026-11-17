@@ -1,0 +1,20 @@
+diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
+index e20e8ae..8ddfbec 100644
+--- a/iokit/bsddev/IOKitBSDInit.cpp
++++ b/iokit/bsddev/IOKitBSDInit.cpp
+@@ -772,6 +772,7 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+ 	}
+ 
+ #if defined(ARM64_BOARD_CONFIG_A5XELTE)
++#if !defined(ARM64_BOARD_CONFIG_A51)
+ 	/* GPIO keys: Exynos 7580 or, on HEROLTE, the Exynos 8890 ALIVE pins. */
+ 	a5xelte_keys_init();
+ #if defined(ARM64_BOARD_CONFIG_HEROLTE)
+@@ -792,6 +793,7 @@ IOFindBSDRoot( char * rootName, unsigned int rootNameSize,
+ 		a5xelte_emmc_probe();
+ 	}
+ 	}
++#endif /* !A51: Exynos7580 keys/touch/eMMC not present on Exynos9611 A51 */
+ #if defined(ARM64_BOARD_CONFIG_HEROLTE)
+ 	{
+ 	uint32_t ufsprobe = 0;
