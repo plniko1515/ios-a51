@@ -231,10 +231,12 @@ index 8f9c8a2..7215b11 100644
 +#define A5XELTE_FB_TEXT_SCALE         2
 +#define A5XELTE_FB_DOT_PITCH          458   /* iPhone X userland density */
 +#define A5XELTE_MARKER_PA             0x8ffff100
-+/* The mainline dtsi puts the Cortex-A53 (LITTLE) cluster at MPIDR 0x100..0x103
-+ * and Cortex-A73 at 0x0..0x3; like the S7, boot is assumed on the A53 core 0
-+ * of the little cluster (TO-VERIFY on first boot). */
-+#define A5XELTE_BOOT_MPIDR            0x100
++/* DEVICE-VERIFIED: stock A51 DTB has cpu@100..103 (Cortex-A53) at
++ * MPIDR 0x0..0x3 and cpu@0..3 (Cortex-A73) at 0x100..0x103. The stock
++ * kernel logs "Booting Linux on physical CPU 0x0" with cpu0 mips=230
++ * (A53 1.7 GHz): S-Boot hands off on the A53 at MPIDR 0x0. SweetCPU::start
++ * checks phys_id against A5XELTE_BOOT_MPIDR (panic SweetCPU.cpp:187). */
++#define A5XELTE_BOOT_MPIDR            0x0
 +#elif defined(ARM64_BOARD_CONFIG_HEROLTE)
  /* Galaxy S7 SM-G930F: S-Boot leaves DECON_F scanning out this buffer. */
  #define HEROLTE                       1
