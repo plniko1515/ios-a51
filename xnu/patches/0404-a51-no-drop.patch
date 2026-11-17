@@ -1,0 +1,29 @@
+diff --git a/bsd/kern/bsd_init.c b/bsd/kern/bsd_init.c
+--- a/bsd/kern/bsd_init.c
++++ b/bsd/kern/bsd_init.c
+@@ -1077,10 +1077,8 @@
+ 	bsd_init_kprintf("done\n");
+ }
+ 
+-#if defined(ARM64_BOARD_CONFIG_HEROLTE) || defined(ARM64_BOARD_CONFIG_A5XELTE)
++#if defined(ARM64_BOARD_CONFIG_HEROLTE)
+ extern void herolte_drop_apply(void);
+-#endif
+-#if defined(ARM64_BOARD_CONFIG_HEROLTE)
+ extern void herolte_wifi_early(void);
+ #endif
+ 
+@@ -1110,11 +1108,7 @@
+ 
+ 	bsd_init_kprintf("bsd_do_post - done");
+ 
+-#if defined(ARM64_BOARD_CONFIG_HEROLTE) || defined(ARM64_BOARD_CONFIG_A5XELTE)
+-	/* Files from the USERDATA drop zone, before launchd (bsd/dev/herolte_drop.c). */
+-	herolte_drop_apply();
+-#endif
+ #if defined(ARM64_BOARD_CONFIG_HEROLTE)
++	/* Files from the USERDATA drop zone, before launchd (bsd/dev/herolte_drop.c). */
++	herolte_drop_apply();
+ 	/* en0 for the Wi-Fi before wifid and configd look for it (bsd/dev/herolte_wifi.c) */
+ 	herolte_wifi_early();
+ #endif
