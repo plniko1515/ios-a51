@@ -1,0 +1,27 @@
+diff --git a/bsd/dev/sweet_ufs.c b/bsd/dev/sweet_ufs.c
+index c800a72..0ab67a0 100644
+--- a/bsd/dev/sweet_ufs.c
++++ b/bsd/dev/sweet_ufs.c
+@@ -171,7 +171,12 @@ ufs_scsi(const uint8_t *cdb, unsigned cdb_len, uint32_t len, bool write)
+ 	utrd->dw2 = 0x0f;                       /* OCS invalid until updated */
+ 	utrd->ucdba = (uint32_t)ucd_pa;
+ 	utrd->ucdbau = (uint32_t)(ucd_pa >> 32);
+-	utrd->resp = (512u / 4) << 16 | (512u / 4);
++	/* Exynos9611 (UFSHCD_QUIRK_PRDT_BYTE_GRAN): response/PRDT offsets and
++	 * lengths are in BYTES, not DWORDs. UCD layout: cmd @ +0x0 (512 B),
++	 * response @ +0x200 (512 B), PRDT @ +0x400. The SWEET/spec DWORD form
++	 * (0x00800080 / 0x01000000|n) makes the controller write the response
++	 * UPIU out of bounds -> all-zero response, OCS 0x7, TUR fails. */
++	utrd->resp = (512u) << 16 | (512u);
+ 	if (len) {
+ 		uint32_t n = 0;
+ 		for (uint32_t done = 0; done < len; done += PRDT_CHUNK, n++) {
+@@ -180,7 +185,7 @@ ufs_scsi(const uint8_t *cdb, unsigned cdb_len, uint32_t len, bool write)
+ 			ucd->prdt[n].addr_hi = (uint32_t)((bounce_pa + done) >> 32);
+ 			ucd->prdt[n].dbc = chunk - 1;
+ 		}
+-		utrd->prdt = (1024u / 4) << 16 | n;
++		utrd->prdt = (1024u) << 16 | n;
+ 	}
+ 
+ 	if (su.cache) {
