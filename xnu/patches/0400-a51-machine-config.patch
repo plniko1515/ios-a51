@@ -213,7 +213,7 @@ diff --git a/pexpert/pexpert/arm64/A5XELTE.h b/pexpert/pexpert/arm64/A5XELTE.h
 index 8f9c8a2..7215b11 100644
 --- a/pexpert/pexpert/arm64/A5XELTE.h
 +++ b/pexpert/pexpert/arm64/A5XELTE.h
-@@ -10,7 +10,24 @@
+@@ -10,7 +10,26 @@
  #define SWEET                         1
  
  /* Firmware scanout buffer and the earliest XNU marker (physical). */
