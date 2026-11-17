@@ -123,7 +123,7 @@ uintptr_t a51_prepare_xnu(uintptr_t fdt, volatile uint64_t *log, uint64_t el, ui
 {
     uint64_t rd_start, rd_end;
     log[77] = a51_fb_enable();
-    a51_fb_text(0, "A51 XNU LOADER");
+    a51_fb_text(0, "A51 XNU LOADER v2 NODROP");
     if (el != 4)
         return fail(log, -10, "NOT EL1");
     if (sctlr & 1)

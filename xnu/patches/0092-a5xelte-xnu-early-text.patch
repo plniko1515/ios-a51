@@ -40,7 +40,7 @@ index 5b66c3a..f7a54ac 100644
 +La5_draw_text:
 +	adrp	x3, EXT(iso_font)@page
 +	add	x3, x3, EXT(iso_font)@pageoff
-+	MOV64	x4, 0xCA000000
++	MOV64	x4, 0x67000000
 +	mov	x5, #4320
 +	madd	x4, x2, x5, x4
 +	add	x4, x4, x1, lsl #2
